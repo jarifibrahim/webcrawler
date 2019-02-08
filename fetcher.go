@@ -75,7 +75,8 @@ func ConvertResponseToURLList(baseURL string, body io.Reader) []string {
 				log.Errorf("Failed to build URL: %s", err)
 				continue
 			}
-			// If we've already added this URL to urlList, don't add it again.
+			// If we've already added this URL to urlList, don't add it again
+			// OR if the new url is equal to the baseURL
 			if _, ok := URLset[builtURL]; ok || builtURL == baseURL {
 				continue
 			}
@@ -103,12 +104,11 @@ func findHrefValue(t html.Token) *string {
 }
 
 func buildURL(baseURL string, href string) (string, error) {
-
 	// Invalid href value. Return error
 	if href == "" ||
 		len(href) == 1 ||
 		strings.HasPrefix(href, "#") {
-		return "", fmt.Errorf("Invalid URL: %s", href)
+		return "", fmt.Errorf("invalid URL: %q . Skipping.", href)
 	}
 
 	u, err := url.Parse(href)

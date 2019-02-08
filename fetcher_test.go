@@ -129,7 +129,7 @@ func TestFindHref(t *testing.T) {
 }
 
 func TestConvertResponseToURLList(t *testing.T) {
-	mockFetcher := SimpleFetcher{baseURL: "http://site.com"}
+	baseURL := "http://site.com"
 	testData := []struct {
 		testName        string
 		response        string
@@ -149,7 +149,7 @@ func TestConvertResponseToURLList(t *testing.T) {
 		tt := tt
 		t.Run(tt.testName, func(t *testing.T) {
 			body := strings.NewReader(tt.response)
-			actualURLList := ConvertResponseToURLList(mockFetcher.baseURL, body)
+			actualURLList := ConvertResponseToURLList(baseURL, body)
 			assert.Equal(t, tt.expectedURLList, actualURLList)
 		})
 	}
