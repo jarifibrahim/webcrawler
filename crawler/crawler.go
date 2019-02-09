@@ -1,7 +1,6 @@
 package crawler
 
 import (
-	"fmt"
 	"io"
 	"net/url"
 	"os"
@@ -115,7 +114,7 @@ func StartCrawling(maxDepth int, baseURL string, file *os.File) {
 	root := tree.NewNode(baseURL)
 	seenURLs := newSeenMap()
 	crawl(baseURL, maxDepth, fetchers.NewSimpleFetcher(baseURL), root, seenURLs)
-	fmt.Println(seenURLs.urls)
+
 	log.Info("Total time taken:", time.Since(start))
 
 	root.WriteTreeToFile(file)
