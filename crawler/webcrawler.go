@@ -1,4 +1,4 @@
-package main
+package crawler
 
 import (
 	"io"
@@ -107,12 +107,4 @@ func WriteSiteMapToFile(crawledURLs []string, f io.Writer) {
 	if err != nil {
 		log.Error(err)
 	}
-}
-
-func main() {
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-	})
-	StartCrawling(3, "http://jarifibrahim.github.io", os.Stdout)
-
 }
