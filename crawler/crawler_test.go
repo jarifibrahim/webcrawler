@@ -128,8 +128,7 @@ func TestCrawlDepth2(t *testing.T) {
 		assert.Equal(t, expectedURLs, *crawledURLs)
 
 		expectedTree := tree.NewNode("https://g.org/")
-		child, err := expectedTree.AddChild("https://g.org/pkg/")
-		assert.Nil(t, err)
+		child := expectedTree.AddChild("https://g.org/pkg/")
 		child.AddChild("https://g.org/")
 		child.AddChild("https://g.org/cmd/")
 		child.AddChild("https://g.org/pkg/fmt/")
@@ -157,23 +156,19 @@ func TestCrawlDepth3(t *testing.T) {
 
 		expectedTree := tree.NewNode("https://g.org/")
 
-		child1, err := expectedTree.AddChild("https://g.org/pkg/")
-		assert.Nil(t, err)
+		child1 := expectedTree.AddChild("https://g.org/pkg/")
 		child1.AddChild("https://g.org/")
 
-		child2, err := child1.AddChild("https://g.org/cmd/")
-		assert.Nil(t, err)
+		child2 := child1.AddChild("https://g.org/cmd/")
 		child2.AddChild("https://g.org/x/tools")
 		child2.AddChild("https://g.org/net/http")
 		child2.AddChild("https://g.org/net/html")
 
-		child3, err := child1.AddChild("https://g.org/pkg/fmt/")
-		assert.Nil(t, err)
+		child3 := child1.AddChild("https://g.org/pkg/fmt/")
 		child3.AddChild("https://g.org/")
 		child3.AddChild("https://g.org/pkg/")
 
-		child4, err := child1.AddChild("https://g.org/pkg/os/")
-		assert.Nil(t, err)
+		child4 := child1.AddChild("https://g.org/pkg/os/")
 		child4.AddChild("https://g.org/")
 		child4.AddChild("https://g.org/pkg/")
 

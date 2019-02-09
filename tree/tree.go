@@ -4,7 +4,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,13 +24,16 @@ func NewNode(url string) *URLNode {
 
 // AddChild adds a new child to the given node.
 // Returns the newly created child
-func (node *URLNode) AddChild(childURL string) (*URLNode, error) {
+func (node *URLNode) AddChild(childURL string) *URLNode {
+	// Don't add child node if root node is nil
+	// The root node (and all the following nodes) will be nil if --show-tree
+	// flag is set to false
 	if node == nil {
-		return nil, errors.New(ErrNodeNil)
+		return nil
 	}
 	newChild := URLNode{url: childURL}
 	node.children = append(node.children, &newChild)
-	return &newChild, nil
+	return &newChild
 }
 
 func (node *URLNode) WriteTreeToFile(file *os.File) {

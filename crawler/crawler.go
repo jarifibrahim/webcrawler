@@ -44,16 +44,12 @@ func crawl(baseUrl string, depth int, fetcher fetchers.Fetcher, urlNode *tree.UR
 	}
 
 	for _, url := range urlList {
-		childNode, err := urlNode.AddChild(url)
-		if !isPartOfDomain(baseUrl, url) {
+		// Add new URL as child of the current node.
+		childNode := urlNode.AddChild(url)
+
+		if !isPartOfDomain(baseURL, url) {
 			contextLogger.WithField("child_url", url).Info("Child URL not part of domain. Skipping.")
 			continue
-		}
-		if err != nil {
-			contextLogger.WithFields(log.Fields{
-				"child_url": url,
-				"error":     err,
-			}).Error("Failed to add child node")
 		}
 		newlyCrawledURLs := crawl(url, depth-1, fetcher, childNode, seenURL)
 		if newlyCrawledURLs != nil {
