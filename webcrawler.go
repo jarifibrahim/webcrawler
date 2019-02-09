@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/alecthomas/template"
+	"github.com/jarifibrahim/webcrawler/fetchers"
 	"github.com/jarifibrahim/webcrawler/tree"
 	log "github.com/sirupsen/logrus"
 )
 
-func Crawl(baseUrl string, depth int, fetcher Fetcher, urlNode *tree.URLNode, seenURL map[string]bool) *[]string {
+func Crawl(baseUrl string, depth int, fetcher fetchers.Fetcher, urlNode *tree.URLNode, seenURL map[string]bool) *[]string {
 	contextLogger := log.WithFields(log.Fields{
 		"base_url": baseUrl,
 		"depth":    depth,
@@ -81,7 +82,7 @@ func StartCrawling(maxDepth int, baseURL string, file *os.File) {
 	start := time.Now()
 	root := tree.NewNode(baseURL)
 	visited := make(map[string]bool)
-	Crawl(baseURL, maxDepth, NewSimpleFetcher(baseURL), root, visited)
+	Crawl(baseURL, maxDepth, fetchers.NewSimpleFetcher(baseURL), root, visited)
 	log.Info("Total time taken:", time.Since(start))
 	root.WriteTreeToFile(file)
 
