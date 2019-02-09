@@ -3,9 +3,15 @@ package main
 import (
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
+// Disable logger. We don't want noisy logs when running tests
+func init() {
+	logrus.SetLevel(logrus.PanicLevel)
+
+}
 func TestAddChild(t *testing.T) {
 	rootURL := "foo"
 	root := &URLNodeType{url: rootURL}

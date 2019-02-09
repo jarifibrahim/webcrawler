@@ -9,9 +9,16 @@ import (
 
 	"golang.org/x/net/html/atom"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/html"
 )
+
+// Disable logger. We don't want noisy logs when running tests
+func init() {
+	logrus.SetLevel(logrus.PanicLevel)
+
+}
 
 type fakeClient struct {
 	responseCache map[string]string
