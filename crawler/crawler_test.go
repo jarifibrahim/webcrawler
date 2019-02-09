@@ -19,8 +19,8 @@ func init() {
 }
 func TestWriteSiteMapToFile(t *testing.T) {
 	var writeBuffer bytes.Buffer
-
-	seenLinks := []string{"/foo", "/bar", "/helloWorld"}
+	cache := NewURLCache()
+	cache.urls = []string{"/foo", "/bar", "/helloWorld"}
 	expectedOutput := `
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -38,7 +38,7 @@ func TestWriteSiteMapToFile(t *testing.T) {
 </urlset>
 `
 	// Write sitemap to writeBuffer
-	WriteSiteMapToFile(seenLinks, &writeBuffer)
+	cache.WriteSiteMapToFile(&writeBuffer)
 	assert.Equal(t, expectedOutput, writeBuffer.String())
 }
 
@@ -70,19 +70,19 @@ func TestIsPartOfDomain(t *testing.T) {
 func TestCrawlDepth0(t *testing.T) {
 	expectedURLList := []string{"https://g.org/"}
 	t.Run("without Tree", func(t *testing.T) {
-		visited := newSeenMap()
+		cache := NewURLCache()
 		wg.Add(1)
-		go crawl("https://g.org/", 0, ffetcher, nil, visited)
+		go crawl("https://g.org/", 0, ffetcher, nil, cache)
 		wg.Wait()
-		assert.Equal(t, expectedURLList, visited.urls)
+		assert.Equal(t, expectedURLList, cache.urls)
 	})
 	t.Run("with Tree", func(t *testing.T) {
-		visited := newSeenMap()
+		cache := NewURLCache()
 		rootNode := tree.NewNode("https://g.org/")
 		wg.Add(1)
-		go crawl("https://g.org/", 0, ffetcher, rootNode, visited)
+		go crawl("https://g.org/", 0, ffetcher, rootNode, cache)
 		wg.Wait()
-		assert.Equal(t, expectedURLList, visited.urls)
+		assert.Equal(t, expectedURLList, cache.urls)
 		// A tree with depth 0 is only the root node
 		expectedTree := tree.NewNode("https://g.org/")
 		assert.Equal(t, expectedTree, rootNode)
@@ -91,20 +91,20 @@ func TestCrawlDepth0(t *testing.T) {
 func TestCrawlDepth1(t *testing.T) {
 	expectedURLList := []string{"https://g.org/", "https://g.org/pkg/", "https://g.org/cmd/"}
 	t.Run("without tree", func(t *testing.T) {
-		visited := newSeenMap()
+		cache := NewURLCache()
 		wg.Add(1)
-		go crawl("https://g.org/", 1, ffetcher, nil, visited)
+		go crawl("https://g.org/", 1, ffetcher, nil, cache)
 		wg.Wait()
-		assert.ElementsMatch(t, expectedURLList, visited.urls)
+		assert.ElementsMatch(t, expectedURLList, cache.urls)
 
 	})
 	t.Run("with tree", func(t *testing.T) {
-		visited := newSeenMap()
+		cache := NewURLCache()
 		rootNode := tree.NewNode("https://g.org/")
 		wg.Add(1)
-		go crawl("https://g.org/", 1, ffetcher, rootNode, visited)
+		go crawl("https://g.org/", 1, ffetcher, rootNode, cache)
 		wg.Wait()
-		assert.ElementsMatch(t, expectedURLList, visited.urls)
+		assert.ElementsMatch(t, expectedURLList, cache.urls)
 
 		expectedTree := tree.NewNode("https://g.org/")
 		for _, url := range expectedURLList[1:] {
@@ -114,11 +114,11 @@ func TestCrawlDepth1(t *testing.T) {
 	})
 	t.Run("non existent URL", func(t *testing.T) {
 		t.Run("without tree", func(t *testing.T) {
-			visited := newSeenMap()
+			cache := NewURLCache()
 			wg.Add(1)
-			go crawl("https://foo.org/", 1, ffetcher, nil, visited)
+			go crawl("https://foo.org/", 1, ffetcher, nil, cache)
 			wg.Wait()
-			assert.Equal(t, []string{"https://foo.org/"}, visited.urls)
+			assert.Equal(t, []string{"https://foo.org/"}, cache.urls)
 		})
 	})
 }
@@ -129,19 +129,19 @@ func TestCrawlDepth2(t *testing.T) {
 		"https://g.org/net/http", "https://g.org/pkg/fmt/",
 	}
 	t.Run("without tree", func(t *testing.T) {
-		visited := newSeenMap()
+		cache := NewURLCache()
 		wg.Add(1)
-		go crawl("https://g.org/", 2, ffetcher, nil, visited)
+		go crawl("https://g.org/", 2, ffetcher, nil, cache)
 		wg.Wait()
-		assert.ElementsMatch(t, expectedURLs, visited.urls)
+		assert.ElementsMatch(t, expectedURLs, cache.urls)
 	})
 	t.Run("with tree", func(t *testing.T) {
-		visited := newSeenMap()
+		cache := NewURLCache()
 		rootNode := tree.NewNode("https://g.org/")
 		wg.Add(1)
-		go crawl("https://g.org/", 2, ffetcher, rootNode, visited)
+		go crawl("https://g.org/", 2, ffetcher, rootNode, cache)
 		wg.Wait()
-		assert.ElementsMatch(t, expectedURLs, visited.urls)
+		assert.ElementsMatch(t, expectedURLs, cache.urls)
 
 		expectedTree := tree.NewNode("https://g.org/")
 		child := expectedTree.AddChild("https://g.org/pkg/")
@@ -163,19 +163,19 @@ func TestCrawlDepth3(t *testing.T) {
 		"https://g.org/pkg/fmt/", "https://g.org/pkg/os/"}
 
 	t.Run("without tree", func(t *testing.T) {
-		visited := newSeenMap()
+		cache := NewURLCache()
 		wg.Add(1)
-		go crawl("https://g.org/", 3, ffetcher, nil, visited)
+		go crawl("https://g.org/", 3, ffetcher, nil, cache)
 		wg.Wait()
-		assert.ElementsMatch(t, depth3ExpectedURLs, visited.urls)
+		assert.ElementsMatch(t, depth3ExpectedURLs, cache.urls)
 	})
 	t.Run("with tree", func(t *testing.T) {
-		visited := newSeenMap()
+		cache := NewURLCache()
 		rootNode := tree.NewNode("https://g.org/")
 		wg.Add(1)
-		go crawl("https://g.org/", 3, ffetcher, rootNode, visited)
+		go crawl("https://g.org/", 3, ffetcher, rootNode, cache)
 		wg.Wait()
-		assert.ElementsMatch(t, depth3ExpectedURLs, visited.urls)
+		assert.ElementsMatch(t, depth3ExpectedURLs, cache.urls)
 
 		expectedTree := tree.NewNode("https://g.org/")
 
@@ -202,21 +202,21 @@ func TestCrawlDepth3(t *testing.T) {
 		// The output of crawledURLs depth 3 onwards should be same since there aren't
 		// anymore URLs below dept 3
 		t.Run("depth 4", func(t *testing.T) {
-			visited := newSeenMap()
+			cache := NewURLCache()
 			rootNode := tree.NewNode("https://g.org/")
 			wg.Add(1)
-			go crawl("https://g.org/", 4, ffetcher, rootNode, visited)
+			go crawl("https://g.org/", 4, ffetcher, rootNode, cache)
 			wg.Wait()
-			assert.ElementsMatch(t, depth3ExpectedURLs, visited.urls)
+			assert.ElementsMatch(t, depth3ExpectedURLs, cache.urls)
 			assert.Equal(t, expectedTree, rootNode)
 		})
 		t.Run("depth 5", func(t *testing.T) {
-			visited := newSeenMap()
+			cache := NewURLCache()
 			rootNode := tree.NewNode("https://g.org/")
 			wg.Add(1)
-			go crawl("https://g.org/", 5, ffetcher, rootNode, visited)
+			go crawl("https://g.org/", 5, ffetcher, rootNode, cache)
 			wg.Wait()
-			assert.ElementsMatch(t, depth3ExpectedURLs, visited.urls)
+			assert.ElementsMatch(t, depth3ExpectedURLs, cache.urls)
 			assert.Equal(t, expectedTree, rootNode)
 		})
 	})
@@ -266,12 +266,22 @@ func TestActualWebsite(t *testing.T) {
 		"http://jarifibrahim.github.io/tags/javascript/",
 		"http://jarifibrahim.github.io/tags/ui-testing/",
 		"http://jarifibrahim.github.io/tags/async-await/"}
-	seenURLs := newSeenMap()
+	cache := NewURLCache()
 	wg.Add(1)
 	root := tree.NewNode("http://jarifibrahim.github.io")
-	go crawl("http://jarifibrahim.github.io", 3, fetchers.NewSimpleFetcher("http://jarifibrahim.github.io"), root, seenURLs)
+	go crawl("http://jarifibrahim.github.io", 3, fetchers.NewSimpleFetcher("http://jarifibrahim.github.io"), root, cache)
 	wg.Wait()
-	assert.ElementsMatch(t, expectedURLs, seenURLs.urls)
+	assert.ElementsMatch(t, expectedURLs, cache.urls)
+}
+
+func BenchmarkCrawl(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		cache := NewURLCache()
+		wg.Add(1)
+		go crawl("http://golang.org/", 3, fetchers.NewSimpleFetcher("http://golang.org/"), nil, cache)
+		wg.Wait()
+	}
+
 }
 
 // Inspired from https://tour.golang.org/concurrency/10

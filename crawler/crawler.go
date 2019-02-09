@@ -1,7 +1,6 @@
 package crawler
 
 import (
-	"encoding/json"
 	"io"
 	"net/url"
 	"os"
@@ -14,28 +13,37 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type seenURLs struct {
-	urlMap map[string]struct{}
-	urls   []string
-
+type urlCache struct {
+	urlMap          map[string]struct{} // urlMap is used for fast lookup. It is used to ensure we don't crawl a URL twice
+	urls            []string            // urls stores the actual list of URLs seen
+	seenURLCount    int                 // seenURLCount stores the number of URLs. seenURLCount will always be less than or equal to crawledURLCoun
+	crawledURLCount int                 // The number of seen URLs is not equal to the number of crawled URLs. This variable stores the value of crawled URLs
 	sync.Mutex
 }
 
-func newSeenMap() *seenURLs {
-	return &seenURLs{
+func NewURLCache() *urlCache {
+	return &urlCache{
 		urlMap: make(map[string]struct{}),
 	}
 }
-func (s *seenURLs) Add(url string) bool {
-	s.Lock()
-	if _, ok := s.urlMap[url]; ok {
+
+func (c *urlCache) IncrementCrawledCount() {
+	c.Lock()
+	c.crawledURLCount++
+	c.Unlock()
+}
+
+func (c *urlCache) Add(url string) bool {
+	c.Lock()
+	if _, ok := c.urlMap[url]; ok {
 		// URL already present. Return false indicating the new url was already present
-		s.Unlock()
+		c.Unlock()
 		return false
 	}
-	s.urlMap[url] = struct{}{}
-	s.urls = append(s.urls, url)
-	s.Unlock()
+	c.urlMap[url] = struct{}{}
+	c.seenURLCount++
+	c.urls = append(c.urls, url)
+	c.Unlock()
 	return true
 }
 
@@ -48,10 +56,10 @@ Params:
 	urlNode - urlNode is used to build the tree when --show-tree flag is set.
       	      urlNode stores a tree of link. Where root of the tree is the base URL and
 			  all the links reachable from root are stored at it's children
-	seenURL - Set of URLs already crawled. This ensures we do not crawl URLs which are
+	cache  	- Set of URLs already crawled. This ensures we do not crawl URLs which are
 			  already crawled.
 */
-func crawl(baseURL string, depth int, fetcher fetchers.Fetcher, urlNode *tree.URLNode, seenURL *seenURLs) {
+func crawl(baseURL string, depth int, fetcher fetchers.Fetcher, urlNode *tree.URLNode, cache *urlCache) {
 	contextLogger := log.WithFields(log.Fields{
 		"base_url": baseURL,
 		"depth":    depth,
@@ -59,8 +67,8 @@ func crawl(baseURL string, depth int, fetcher fetchers.Fetcher, urlNode *tree.UR
 
 	defer wg.Done()
 
-	// seenURL.Add returns false means the URL was already seen.
-	if !seenURL.Add(baseURL) {
+	// cache.Add() returns false if the URL was already seen.
+	if !cache.Add(baseURL) {
 		contextLogger.Info("URL already crawled. Skipping")
 		return
 	}
@@ -76,6 +84,8 @@ func crawl(baseURL string, depth int, fetcher fetchers.Fetcher, urlNode *tree.UR
 	// Get list of URLs on the given page
 	urlList, err := fetcher.Fetch(baseURL, fetchers.SimpleLinkExtractor)
 
+	cache.IncrementCrawledCount()
+
 	if err != nil {
 		contextLogger.Infof("failed to fetch URL")
 		return
@@ -86,13 +96,13 @@ func crawl(baseURL string, depth int, fetcher fetchers.Fetcher, urlNode *tree.UR
 		childNode := urlNode.AddChild(url)
 
 		if !isPartOfDomain(baseURL, url) {
-			// even if we're not crawling the URLs, mark it as seen
-			seenURL.Add(url)
+			// even if we're not crawling the URL, mark it as seen
+			cache.Add(url)
 			contextLogger.WithField("child_url", url).Info("Child URL not part of the domain. Skipping.")
 			continue
 		}
 		wg.Add(1)
-		go crawl(url, depth-1, fetcher, childNode, seenURL)
+		go crawl(url, depth-1, fetcher, childNode, cache)
 	}
 }
 
@@ -114,22 +124,29 @@ func isPartOfDomain(baseURL, urlToCheck string) bool {
 var wg sync.WaitGroup
 
 // StartCrawling is the main entry point for crawling.
-func StartCrawling(maxDepth int, baseURL string, file *os.File) {
+func StartCrawling(maxDepth int, baseURL string, showTree bool, treeFile, siteMapFile *os.File) {
 	start := time.Now()
+	var root *tree.URLNode
+	if showTree {
+		root = tree.NewNode(baseURL)
+	}
 
-	root := tree.NewNode(baseURL)
-	seenURLs := newSeenMap()
+	urlCache := NewURLCache()
+
 	wg.Add(1)
-	go crawl(baseURL, maxDepth, fetchers.NewSimpleFetcher(baseURL), root, seenURLs)
+	go crawl(baseURL, maxDepth, fetchers.NewSimpleFetcher(baseURL), root, urlCache)
 	wg.Wait()
 
-	x, _ := os.Create("urls.txt")
-	enc := json.NewEncoder(x)
-	enc.Encode(seenURLs.urls)
-	log.Info("Total URLs found:", len(seenURLs.urls))
+	log.Info("Total URLs found:", urlCache.seenURLCount)
+	log.Info("Total URLs Crawled:", urlCache.crawledURLCount)
 	log.Info("Total time taken:", time.Since(start))
 
-	root.WriteTreeToFile(file)
+	urlCache.WriteSiteMapToFile(siteMapFile)
+
+	if showTree {
+		root.WriteTreeToFile(treeFile)
+	}
+
 }
 
 // WriteSiteMapToFile generetes sitemap from the given list of URLs
@@ -143,7 +160,7 @@ func StartCrawling(maxDepth int, baseURL string, file *os.File) {
 //     <loc>http://foo.com</loc>
 //   </url>
 // </urlset>
-func WriteSiteMapToFile(crawledURLs []string, f io.Writer) {
+func (c *urlCache) WriteSiteMapToFile(f io.Writer) {
 	xmlTemplate := `
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -159,7 +176,7 @@ func WriteSiteMapToFile(crawledURLs []string, f io.Writer) {
 		log.Error(err)
 		return
 	}
-	err = tmpl.Execute(f, crawledURLs)
+	err = tmpl.Execute(f, c.urls)
 	if err != nil {
 		log.Error(err)
 	}
