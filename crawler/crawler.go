@@ -11,6 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var wg sync.WaitGroup
+
 /*
 crawl fetches the list of URLs using the fetcher and crawls the new list of
 URLs in a depth-first-search manner. Returns the list of URLs crawled.
@@ -84,8 +86,6 @@ func isPartOfDomain(baseURL, urlToCheck string) bool {
 	return base.Host == testURL.Host
 
 }
-
-var wg sync.WaitGroup
 
 // StartCrawling is the main entry point for crawling.
 func StartCrawling(maxDepth int, baseURL string, showTree bool, treeFile, siteMapFile *os.File) {
