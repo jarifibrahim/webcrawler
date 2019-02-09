@@ -18,6 +18,11 @@ type URLNodeType struct {
 	children []*URLNodeType // all URLs reachable from actual URL
 }
 
+// NewNode return a new node of URLNodeType
+func NewNode(url string) *URLNodeType {
+	return &URLNodeType{url: url}
+}
+
 // AddChild adds a new child to the given node.
 // Returns the newly created child
 func (node *URLNodeType) AddChild(childURL string) (*URLNodeType, error) {
