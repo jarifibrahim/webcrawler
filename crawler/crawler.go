@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"encoding/json"
 	"io"
 	"net/url"
 	"os"
@@ -55,6 +56,9 @@ func crawl(baseURL string, depth int, fetcher fetchers.Fetcher, urlNode *tree.UR
 		"base_url": baseURL,
 		"depth":    depth,
 	})
+
+	defer wg.Done()
+
 	// seenURL.Add returns false means the URL was already seen.
 	if !seenURL.Add(baseURL) {
 		contextLogger.Info("URL already crawled. Skipping")
@@ -87,9 +91,9 @@ func crawl(baseURL string, depth int, fetcher fetchers.Fetcher, urlNode *tree.UR
 			contextLogger.WithField("child_url", url).Info("Child URL not part of the domain. Skipping.")
 			continue
 		}
-		crawl(url, depth-1, fetcher, childNode, seenURL)
+		wg.Add(1)
+		go crawl(url, depth-1, fetcher, childNode, seenURL)
 	}
-	return
 }
 
 func isPartOfDomain(baseURL, urlToCheck string) bool {
@@ -107,14 +111,22 @@ func isPartOfDomain(baseURL, urlToCheck string) bool {
 
 }
 
+var wg sync.WaitGroup
+
 // StartCrawling is the main entry point for crawling.
 func StartCrawling(maxDepth int, baseURL string, file *os.File) {
 	start := time.Now()
 
 	root := tree.NewNode(baseURL)
 	seenURLs := newSeenMap()
-	crawl(baseURL, maxDepth, fetchers.NewSimpleFetcher(baseURL), root, seenURLs)
+	wg.Add(1)
+	go crawl(baseURL, maxDepth, fetchers.NewSimpleFetcher(baseURL), root, seenURLs)
+	wg.Wait()
 
+	x, _ := os.Create("urls.txt")
+	enc := json.NewEncoder(x)
+	enc.Encode(seenURLs.urls)
+	log.Info("Total URLs found:", len(seenURLs.urls))
 	log.Info("Total time taken:", time.Since(start))
 
 	root.WriteTreeToFile(file)

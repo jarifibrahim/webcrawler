@@ -14,19 +14,22 @@ func main() {
 	})
 	baseURL := flag.String("baseurl", "http://jarifibrahim.github.io", "Base URL to crawl")
 	maxDepth := flag.Int("max-depth", 2, "Max Depth to crawl")
-	output := flag.String("output-file", "Stdout", "File to write output")
+	sitemapFileName := flag.String("sitemap-file-name", "sitemap.xml", "File to write sitemap")
+	showTree := flag.Bool("show-tree", true, "Show links between pages")
+	treeFileName := flag.String("tree-file-name", "url-tree.txt", "File to write the generated tree")
+	flag.Parse()
 
-	var fileToWrite *os.File
-	if *output == "Stdout" {
-		fileToWrite = os.Stdout
-	} else {
-		var err error
-		fileToWrite, err = os.Create(*output)
+	siteMapFile, err := os.Create(*sitemapFileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var treeFile *os.File
+	if *showTree {
+		treeFile, err = os.Create(*treeFileName)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	flag.Parse()
 
-	crawler.StartCrawling(*maxDepth, *baseURL, fileToWrite)
+	crawler.StartCrawling(*maxDepth, *baseURL, *showTree, treeFile, siteMapFile)
 }
