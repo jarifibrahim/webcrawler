@@ -3,6 +3,7 @@ package tree
 import (
 	"os"
 	"strings"
+	"sync"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -11,6 +12,7 @@ import (
 type URLNode struct {
 	url      string     // the actual URL
 	children []*URLNode // all URLs reachable from actual URL
+	sync.Mutex
 }
 
 // NewNode return a new node of URLNode
@@ -19,7 +21,7 @@ func NewNode(url string) *URLNode {
 }
 
 // AddChild adds a new child to the given node.
-// Returns the newly created child
+// Returns the newly created child node
 func (node *URLNode) AddChild(childURL string) *URLNode {
 	// Don't add child node if root node is nil
 	// The root node (and all the following nodes) will be nil if --show-tree
@@ -27,8 +29,10 @@ func (node *URLNode) AddChild(childURL string) *URLNode {
 	if node == nil {
 		return nil
 	}
+	node.Lock()
 	newChild := URLNode{url: childURL}
 	node.children = append(node.children, &newChild)
+	node.Unlock()
 	return &newChild
 }
 
