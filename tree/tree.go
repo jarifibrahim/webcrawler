@@ -7,10 +7,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	ErrNodeNil = "URlNode cannot be nil"
-)
-
 // URLNode represents a Node in the URL tree
 type URLNode struct {
 	url      string     // the actual URL
@@ -36,20 +32,22 @@ func (node *URLNode) AddChild(childURL string) *URLNode {
 	return &newChild
 }
 
+// WriteTreeToFile generates the tree and writes it to the file.
 func (node *URLNode) WriteTreeToFile(file *os.File) {
 	if _, err := file.Write([]byte(node.GenerateTree())); err != nil {
 		log.Error(err)
 	}
-
 }
 
+// GenerateTree tree builds the tree which shows links between nodes.
+// Returns the complete tree pointed to by node.
 func (node *URLNode) GenerateTree() string {
 	return node.generateTree(0)
 }
 
-// GenerateTree returns the ...
+// generate tree is recursively called to build the tree.
+// It generates items in depth first search manner.
 func (node *URLNode) generateTree(tabSize int) string {
-	// Generate items in depth first search manner
 	subTree := ""
 	for _, child := range node.children {
 		line := strings.Repeat("\t", tabSize)
