@@ -108,7 +108,7 @@ func buildURL(baseURL string, href string) (string, error) {
 	if href == "" ||
 		len(href) == 1 ||
 		strings.HasPrefix(href, "#") {
-		return "", fmt.Errorf("invalid URL: %q . Skipping.", href)
+		return "", fmt.Errorf("invalid URL: %q . Skipping", href)
 	}
 
 	u, err := url.Parse(href)
