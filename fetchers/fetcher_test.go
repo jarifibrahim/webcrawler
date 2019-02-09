@@ -55,12 +55,12 @@ func TestSimpleFetcher(t *testing.T) {
 	testFetcher := NewSimpleFetcher("http://localhost:8000/foobar")
 	testFetcher.client = fakeClient
 	t.Run("success", func(t *testing.T) {
-		result, err := testFetcher.Fetch(testFetcher.baseURL)
+		result, err := testFetcher.Fetch(testFetcher.baseURL, SimpleLinkExtractor)
 		assert.Nil(t, err)
 		assert.Equal(t, result, []string{"http://localhost:8000/hello", "http://localhost:8000/bye", "http://localhost:8000/BYE"})
 	})
 	t.Run("client error", func(t *testing.T) {
-		result, err := testFetcher.Fetch("my/random/url")
+		result, err := testFetcher.Fetch("my/random/url", SimpleLinkExtractor)
 		assert.Nil(t, result)
 		assert.Error(t, err)
 	})
@@ -135,7 +135,7 @@ func TestFindHref(t *testing.T) {
 	})
 }
 
-func TestConvertResponseToURLList(t *testing.T) {
+func TestSimpleLinkExtractor(t *testing.T) {
 	baseURL := "http://site.com"
 	testData := []struct {
 		testName        string
@@ -156,7 +156,7 @@ func TestConvertResponseToURLList(t *testing.T) {
 		tt := tt
 		t.Run(tt.testName, func(t *testing.T) {
 			body := strings.NewReader(tt.response)
-			actualURLList := ConvertResponseToURLList(baseURL, body)
+			actualURLList := SimpleLinkExtractor(baseURL, body)
 			assert.Equal(t, tt.expectedURLList, actualURLList)
 		})
 	}

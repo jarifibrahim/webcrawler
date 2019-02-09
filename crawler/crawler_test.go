@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/jarifibrahim/webcrawler/fetchers"
+
 	"github.com/jarifibrahim/webcrawler/tree"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -203,7 +205,7 @@ func TestCrawlDepth3(t *testing.T) {
 // fakeFetcher is Fetcher that returns canned results.
 type fakeFetcher map[string][]string
 
-func (f fakeFetcher) Fetch(url string) ([]string, error) {
+func (f fakeFetcher) Fetch(url string, noOpExtractor fetchers.LinksExtractor) ([]string, error) {
 	if res, ok := f[url]; ok {
 		return res, nil
 	}

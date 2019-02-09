@@ -36,7 +36,7 @@ func crawl(baseUrl string, depth int, fetcher fetchers.Fetcher, urlNode *tree.UR
 	contextLogger.Infof("Started crawling page")
 	defer contextLogger.Info("Finished crawling page")
 
-	urlList, err := fetcher.Fetch(baseUrl)
+	urlList, err := fetcher.Fetch(baseUrl, fetchers.SimpleLinkExtractor)
 
 	if err != nil {
 		contextLogger.Infof("failed to fetch URL")

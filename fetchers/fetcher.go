@@ -12,12 +12,14 @@ import (
 	"golang.org/x/net/html"
 )
 
+// Fetcher represents an object capable of fetching URLs from a given url
 type Fetcher interface {
-	// Fetch returns the body of URL and
-	// a slice of URLs found on that page.
-	Fetch(url string) ([]string, error)
+	// Fetch returns the slice of URLs found on that page.
+	// LinksExtractor allows processing links post fetching.
+	Fetch(string, LinksExtractor) ([]string, error)
 }
 
+// Client represents an object capable of performing a GET request
 type Client interface {
 	Get(string) (*http.Response, error)
 }
@@ -29,15 +31,18 @@ type SimpleFetcher struct {
 }
 
 // NewSimpleFetcher creates a new fetcher with the given base URL. It also
-// creates a new http.Client with 3 seconds timeout
+// creates a new http.Client with 5 seconds timeout
 func NewSimpleFetcher(url string) *SimpleFetcher {
 	simpleClient := http.DefaultClient
+	// Default http client doesn't have a timeout.
 	simpleClient.Timeout = 5 * time.Second
 	return &SimpleFetcher{baseURL: url, client: simpleClient}
 
 }
 
-func (f SimpleFetcher) Fetch(url string) ([]string, error) {
+// Fetch pulls all the URLs on the page at `url`.
+// Returns list of URLs found on the page
+func (f SimpleFetcher) Fetch(url string, le LinksExtractor) ([]string, error) {
 	contextLogger := log.WithField("url", url)
 
 	resp, err := f.client.Get(url)
@@ -47,10 +52,16 @@ func (f SimpleFetcher) Fetch(url string) ([]string, error) {
 	}
 
 	defer resp.Body.Close()
-	return ConvertResponseToURLList(f.baseURL, resp.Body), nil
+	return le(f.baseURL, resp.Body), nil
 }
 
-func ConvertResponseToURLList(baseURL string, body io.Reader) []string {
+// LinksExtractor extracts links from a given io.Reader
+// It allows user to customize how the links should be extracted from given page
+type LinksExtractor func(string, io.Reader) []string
+
+// SimpleLinkExtractor satisfies LinksExtractor.
+// It reads the body and extracts the valid links
+func SimpleLinkExtractor(baseURL string, body io.Reader) []string {
 	contextLogger := log.WithField("base_url", baseURL)
 
 	var urlList []string
@@ -91,7 +102,6 @@ func ConvertResponseToURLList(baseURL string, body io.Reader) []string {
 			if builtURL == baseURL {
 				continue
 			}
-
 			urlList = append(urlList, builtURL)
 		}
 	}
@@ -106,6 +116,10 @@ func findHrefValue(t html.Token) *string {
 	return nil
 }
 
+// buildURL builds an absolute URL from the given baseURL and href
+// Eg: http://foo.com + /bar => http://foo.com/bar
+// 	   http://foo.com + http://bar.com => http://bar.com
+//	   http://foo.com + #content => http://foo.com
 func buildURL(baseURL string, href string) (string, error) {
 	// Discard invalid href values. Return error
 	if href == "" ||
