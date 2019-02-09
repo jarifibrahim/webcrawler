@@ -13,8 +13,16 @@ func init() {
 
 }
 func TestAddChild(t *testing.T) {
+	// validateNewChild checks if the newly created child has correct URL and
+	validateNewChild := func(t *testing.T, node *URLNodeType, nodeURL string) {
+		assert.Nil(t, node.children)
+		assert.Equal(t, node.url, nodeURL)
+		assert.Len(t, node.children, 0)
+	}
+
 	rootURL := "foo"
-	root := &URLNodeType{url: rootURL}
+	root := NewNode(rootURL)
+
 	validateNewChild(t, root, rootURL)
 
 	t.Run("Success", func(t *testing.T) {
@@ -81,9 +89,43 @@ func TestAddChild(t *testing.T) {
 	})
 }
 
-// validateNewChild checks if the newly created child has correct URL and
-func validateNewChild(t *testing.T, node *URLNodeType, nodeURL string) {
-	assert.Nil(t, node.children)
-	assert.Equal(t, node.url, nodeURL)
-	assert.Len(t, node.children, 0)
+func TestGenerateTree(t *testing.T) {
+	root := NewNode("root")
+	// createChild creates a new child and returns it.
+	// It also asserts the returned error to be nil
+	createChild := func(t *testing.T, parent *URLNodeType, child string) *URLNodeType {
+		createdChild, err := parent.AddChild(child)
+		assert.Nil(t, err)
+		return createdChild
+	}
+	t.Run("no children", func(t *testing.T) {
+		assert.Equal(t, "root\n", root.GenerateTree())
+	})
+	t.Run("one child", func(t *testing.T) {
+		/*
+			root
+			  |- child
+		*/
+		child1 := createChild(t, root, "child1")
+		assert.Equal(t, "root\n└── child1\n", root.GenerateTree())
+		t.Run("two children", func(t *testing.T) {
+			/*
+				root
+				  | - child 1
+				  | - child 2
+			*/
+			createChild(t, root, "child2")
+			assert.Equal(t, "root\n└── child1\n└── child2\n", root.GenerateTree())
+		})
+		t.Run("grandchild of first child", func(t *testing.T) {
+			/*
+				root
+				  | - child 1
+				    | - grandchild 1
+				  | - child 2
+			*/
+			createChild(t, child1, "grandchild 1")
+			assert.Equal(t, "root\n└── child1\n\t└── grandchild 1\n└── child2\n", root.GenerateTree())
+		})
+	})
 }

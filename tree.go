@@ -36,20 +36,24 @@ func (node *URLNodeType) AddChild(childURL string) (*URLNodeType, error) {
 
 func (node *URLNodeType) WriteTreeToFile(file *os.File) {
 
-	if _, err := file.Write([]byte(node.GenerateTree(0))); err != nil {
+	if _, err := file.Write([]byte(node.GenerateTree())); err != nil {
 		log.Error(err)
 	}
 
 }
 
+func (node *URLNodeType) GenerateTree() string {
+	return node.generateTree(0)
+}
+
 // GenerateTree returns the ...
-func (node *URLNodeType) GenerateTree(tabSize int) string {
+func (node *URLNodeType) generateTree(tabSize int) string {
 	// Generate items in depth first search manner
 	subTree := ""
 	for _, child := range node.children {
 		line := strings.Repeat("\t", tabSize)
 		line += "└── "
-		subTree += line + child.GenerateTree(tabSize+1)
+		subTree += line + child.generateTree(tabSize+1)
 	}
 	return node.url + "\n" + subTree
 }
