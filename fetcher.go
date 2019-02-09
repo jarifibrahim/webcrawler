@@ -32,7 +32,7 @@ type SimpleFetcher struct {
 // creates a new http.Client with 3 seconds timeout
 func NewSimpleFetcher(url string) *SimpleFetcher {
 	simpleClient := http.DefaultClient
-	simpleClient.Timeout = 3 * time.Second
+	simpleClient.Timeout = 5 * time.Second
 	return &SimpleFetcher{baseURL: url, client: simpleClient}
 
 }
@@ -51,6 +51,8 @@ func (f SimpleFetcher) Fetch(url string) ([]string, error) {
 }
 
 func ConvertResponseToURLList(baseURL string, body io.Reader) []string {
+	contextLogger := log.WithField("base_url", baseURL)
+
 	var urlList []string
 	// URLset is used to ensure urlList is always unique
 	URLset := make(map[string]struct{})
@@ -70,25 +72,26 @@ func ConvertResponseToURLList(baseURL string, body io.Reader) []string {
 			if href == nil {
 				continue
 			}
-			builtURL, err := buildURL(baseURL, *href)
-			if err != nil {
-				log.Errorf("Failed to build URL: %s", err)
-				continue
-			}
 			// If we've already added this URL to urlList, don't add it again
-			// OR if the new url is equal to the baseURL
-			if _, ok := URLset[builtURL]; ok || builtURL == baseURL {
+			if _, ok := URLset[*href]; ok {
 				continue
 			}
 
 			// add URL to URLset
-			URLset[builtURL] = struct{}{}
-
+			URLset[*href] = struct{}{}
+			builtURL, err := buildURL(baseURL, *href)
 			if err != nil {
 				// error occurred while trying to build the URL. Log the error
 				// and continue.
-				log.Errorf("failed to build URL: %s", err)
+				contextLogger.Infof("Failed to build URL: %s", err)
+				continue
 			}
+
+			// if the new url is equal to the baseURL don't add it
+			if builtURL == baseURL {
+				continue
+			}
+
 			urlList = append(urlList, builtURL)
 		}
 	}
@@ -104,11 +107,11 @@ func findHrefValue(t html.Token) *string {
 }
 
 func buildURL(baseURL string, href string) (string, error) {
-	// Invalid href value. Return error
+	// Discard invalid href values. Return error
 	if href == "" ||
 		len(href) == 1 ||
 		strings.HasPrefix(href, "#") {
-		return "", fmt.Errorf("invalid URL: %q . Skipping", href)
+		return baseURL, nil
 	}
 
 	u, err := url.Parse(href)
