@@ -35,7 +35,6 @@ func (node *URLNode) AddChild(childURL string) (*URLNode, error) {
 }
 
 func (node *URLNode) WriteTreeToFile(file *os.File) {
-
 	if _, err := file.Write([]byte(node.GenerateTree())); err != nil {
 		log.Error(err)
 	}
