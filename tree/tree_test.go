@@ -14,7 +14,7 @@ func init() {
 }
 func TestAddChild(t *testing.T) {
 	// validateNewChild checks if the newly created child has correct URL and
-	validateNewChild := func(t *testing.T, node *URLNodeType, nodeURL string) {
+	validateNewChild := func(t *testing.T, node *URLNode, nodeURL string) {
 		assert.Nil(t, node.children)
 		assert.Equal(t, node.url, nodeURL)
 		assert.Len(t, node.children, 0)
@@ -80,7 +80,7 @@ func TestAddChild(t *testing.T) {
 
 	t.Run("Failure", func(t *testing.T) {
 		t.Run("Add Child to nil node", func(t *testing.T) {
-			var nilNode *URLNodeType
+			var nilNode *URLNode
 			child, err := nilNode.AddChild("foo child")
 			assert.Error(t, err, ErrNodeNil)
 			assert.Nil(t, child)
@@ -93,7 +93,7 @@ func TestGenerateTree(t *testing.T) {
 	root := NewNode("root")
 	// createChild creates a new child and returns it.
 	// It also asserts the returned error to be nil
-	createChild := func(t *testing.T, parent *URLNodeType, child string) *URLNodeType {
+	createChild := func(t *testing.T, parent *URLNode, child string) *URLNode {
 		createdChild, err := parent.AddChild(child)
 		assert.Nil(t, err)
 		return createdChild

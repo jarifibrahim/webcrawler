@@ -12,29 +12,29 @@ const (
 	ErrNodeNil = "URlNode cannot be nil"
 )
 
-// URLNodeType represents a Node in the URL tree
-type URLNodeType struct {
-	url      string         // the actual URL
-	children []*URLNodeType // all URLs reachable from actual URL
+// URLNode represents a Node in the URL tree
+type URLNode struct {
+	url      string     // the actual URL
+	children []*URLNode // all URLs reachable from actual URL
 }
 
-// NewNode return a new node of URLNodeType
-func NewNode(url string) *URLNodeType {
-	return &URLNodeType{url: url}
+// NewNode return a new node of URLNode
+func NewNode(url string) *URLNode {
+	return &URLNode{url: url}
 }
 
 // AddChild adds a new child to the given node.
 // Returns the newly created child
-func (node *URLNodeType) AddChild(childURL string) (*URLNodeType, error) {
+func (node *URLNode) AddChild(childURL string) (*URLNode, error) {
 	if node == nil {
 		return nil, errors.New(ErrNodeNil)
 	}
-	newChild := URLNodeType{url: childURL}
+	newChild := URLNode{url: childURL}
 	node.children = append(node.children, &newChild)
 	return &newChild, nil
 }
 
-func (node *URLNodeType) WriteTreeToFile(file *os.File) {
+func (node *URLNode) WriteTreeToFile(file *os.File) {
 
 	if _, err := file.Write([]byte(node.GenerateTree())); err != nil {
 		log.Error(err)
@@ -42,12 +42,12 @@ func (node *URLNodeType) WriteTreeToFile(file *os.File) {
 
 }
 
-func (node *URLNodeType) GenerateTree() string {
+func (node *URLNode) GenerateTree() string {
 	return node.generateTree(0)
 }
 
 // GenerateTree returns the ...
-func (node *URLNodeType) generateTree(tabSize int) string {
+func (node *URLNode) generateTree(tabSize int) string {
 	// Generate items in depth first search manner
 	subTree := ""
 	for _, child := range node.children {
