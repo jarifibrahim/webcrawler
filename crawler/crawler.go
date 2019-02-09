@@ -1,51 +1,15 @@
 package crawler
 
 import (
-	"io"
 	"net/url"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/alecthomas/template"
 	"github.com/jarifibrahim/webcrawler/fetchers"
 	"github.com/jarifibrahim/webcrawler/tree"
 	log "github.com/sirupsen/logrus"
 )
-
-type urlCache struct {
-	urlMap          map[string]struct{} // urlMap is used for fast lookup. It is used to ensure we don't crawl a URL twice
-	urls            []string            // urls stores the actual list of URLs seen
-	seenURLCount    int                 // seenURLCount stores the number of URLs. seenURLCount will always be less than or equal to crawledURLCoun
-	crawledURLCount int                 // The number of seen URLs is not equal to the number of crawled URLs. This variable stores the value of crawled URLs
-	sync.Mutex
-}
-
-func NewURLCache() *urlCache {
-	return &urlCache{
-		urlMap: make(map[string]struct{}),
-	}
-}
-
-func (c *urlCache) IncrementCrawledCount() {
-	c.Lock()
-	c.crawledURLCount++
-	c.Unlock()
-}
-
-func (c *urlCache) Add(url string) bool {
-	c.Lock()
-	if _, ok := c.urlMap[url]; ok {
-		// URL already present. Return false indicating the new url was already present
-		c.Unlock()
-		return false
-	}
-	c.urlMap[url] = struct{}{}
-	c.seenURLCount++
-	c.urls = append(c.urls, url)
-	c.Unlock()
-	return true
-}
 
 /*
 crawl fetches the list of URLs using the fetcher and crawls the new list of
@@ -59,7 +23,7 @@ Params:
 	cache  	- Set of URLs already crawled. This ensures we do not crawl URLs which are
 			  already crawled.
 */
-func crawl(baseURL string, depth int, fetcher fetchers.Fetcher, urlNode *tree.URLNode, cache *urlCache) {
+func crawl(baseURL string, depth int, fetcher fetchers.Fetcher, urlNode *tree.URLNode, cache *URLCache) {
 	contextLogger := log.WithFields(log.Fields{
 		"base_url": baseURL,
 		"depth":    depth,
@@ -147,37 +111,4 @@ func StartCrawling(maxDepth int, baseURL string, showTree bool, treeFile, siteMa
 		root.WriteTreeToFile(treeFile)
 	}
 
-}
-
-// WriteSiteMapToFile generetes sitemap from the given list of URLs
-// The sitemap is minimal and contains only the mandatory <loc> field
-// Sample sitemap
-//
-// <?xml version="1.0" encoding="UTF-8"?>
-//
-// <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-//   <url>
-//     <loc>http://foo.com</loc>
-//   </url>
-// </urlset>
-func (c *urlCache) WriteSiteMapToFile(f io.Writer) {
-	xmlTemplate := `
-<?xml version="1.0" encoding="UTF-8"?>
-
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-{{range $element := . }}
-  <url>
-    <loc>{{$element}}</loc>
-  </url>{{end}}
-</urlset>
-`
-	tmpl, err := template.New("test").Parse(xmlTemplate)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	err = tmpl.Execute(f, c.urls)
-	if err != nil {
-		log.Error(err)
-	}
 }

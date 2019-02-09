@@ -278,7 +278,7 @@ func BenchmarkCrawl(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		cache := NewURLCache()
 		wg.Add(1)
-		go crawl("http://golang.org/", 3, fetchers.NewSimpleFetcher("http://golang.org/"), nil, cache)
+		go crawl("http://golang.org/", 4, fetchers.NewSimpleFetcher("http://golang.org/"), nil, cache)
 		wg.Wait()
 	}
 
