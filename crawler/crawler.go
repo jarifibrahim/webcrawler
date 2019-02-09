@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func Crawl(baseUrl string, depth int, fetcher fetchers.Fetcher, urlNode *tree.URLNode, seenURL map[string]bool) *[]string {
+func crawl(baseUrl string, depth int, fetcher fetchers.Fetcher, urlNode *tree.URLNode, seenURL map[string]bool) *[]string {
 	contextLogger := log.WithFields(log.Fields{
 		"base_url": baseUrl,
 		"depth":    depth,
@@ -55,7 +55,7 @@ func Crawl(baseUrl string, depth int, fetcher fetchers.Fetcher, urlNode *tree.UR
 				"error":     err,
 			}).Error("Failed to add child node")
 		}
-		newlyCrawledURLs := Crawl(url, depth-1, fetcher, childNode, seenURL)
+		newlyCrawledURLs := crawl(url, depth-1, fetcher, childNode, seenURL)
 		if newlyCrawledURLs != nil {
 			*crawledURLs = append(*crawledURLs, *newlyCrawledURLs...)
 		}
@@ -82,7 +82,7 @@ func StartCrawling(maxDepth int, baseURL string, file *os.File) {
 	start := time.Now()
 	root := tree.NewNode(baseURL)
 	visited := make(map[string]bool)
-	Crawl(baseURL, maxDepth, fetchers.NewSimpleFetcher(baseURL), root, visited)
+	crawl(baseURL, maxDepth, fetchers.NewSimpleFetcher(baseURL), root, visited)
 	log.Info("Total time taken:", time.Since(start))
 	root.WriteTreeToFile(file)
 

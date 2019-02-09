@@ -69,13 +69,13 @@ func TestCrawlDepth0(t *testing.T) {
 	expectedURLList := []string{"https://g.org/"}
 	t.Run("without Tree", func(t *testing.T) {
 		visited := make(map[string]bool)
-		crawledURLs := Crawl("https://g.org/", 0, ffetcher, nil, visited)
+		crawledURLs := crawl("https://g.org/", 0, ffetcher, nil, visited)
 		assert.Equal(t, expectedURLList, *crawledURLs)
 	})
 	t.Run("with Tree", func(t *testing.T) {
 		visited := make(map[string]bool)
 		rootNode := tree.NewNode("https://g.org/")
-		crawledURLs := Crawl("https://g.org/", 0, ffetcher, rootNode, visited)
+		crawledURLs := crawl("https://g.org/", 0, ffetcher, rootNode, visited)
 		assert.Equal(t, expectedURLList, *crawledURLs)
 		// A tree with depth 0 is only the root node
 		expectedTree := tree.NewNode("https://g.org/")
@@ -86,14 +86,14 @@ func TestCrawlDepth1(t *testing.T) {
 	expectedURLList := []string{"https://g.org/", "https://g.org/pkg/", "https://g.org/cmd/"}
 	t.Run("without tree", func(t *testing.T) {
 		visited := make(map[string]bool)
-		crawledURLs := Crawl("https://g.org/", 1, ffetcher, nil, visited)
+		crawledURLs := crawl("https://g.org/", 1, ffetcher, nil, visited)
 		assert.Equal(t, expectedURLList, *crawledURLs)
 
 	})
 	t.Run("with tree", func(t *testing.T) {
 		visited := make(map[string]bool)
 		rootNode := tree.NewNode("https://g.org/")
-		crawledURLs := Crawl("https://g.org/", 1, ffetcher, rootNode, visited)
+		crawledURLs := crawl("https://g.org/", 1, ffetcher, rootNode, visited)
 		assert.Equal(t, expectedURLList, *crawledURLs)
 
 		expectedTree := tree.NewNode("https://g.org/")
@@ -105,7 +105,7 @@ func TestCrawlDepth1(t *testing.T) {
 	t.Run("non existent URL", func(t *testing.T) {
 		t.Run("without tree", func(t *testing.T) {
 			visited := make(map[string]bool)
-			crawledURLs := Crawl("https://foo.org/", 1, ffetcher, nil, visited)
+			crawledURLs := crawl("https://foo.org/", 1, ffetcher, nil, visited)
 			assert.Equal(t, []string{"https://foo.org/"}, *crawledURLs)
 		})
 	})
@@ -116,13 +116,13 @@ func TestCrawlDepth2(t *testing.T) {
 		"https://g.org/pkg/fmt/", "https://g.org/pkg/os/"}
 	t.Run("without tree", func(t *testing.T) {
 		visited := make(map[string]bool)
-		crawledURLs := Crawl("https://g.org/", 2, ffetcher, nil, visited)
+		crawledURLs := crawl("https://g.org/", 2, ffetcher, nil, visited)
 		assert.Equal(t, expectedURLs, *crawledURLs)
 	})
 	t.Run("with tree", func(t *testing.T) {
 		visited := make(map[string]bool)
 		rootNode := tree.NewNode("https://g.org/")
-		crawledURLs := Crawl("https://g.org/", 2, ffetcher, rootNode, visited)
+		crawledURLs := crawl("https://g.org/", 2, ffetcher, rootNode, visited)
 		assert.Equal(t, expectedURLs, *crawledURLs)
 
 		expectedTree := tree.NewNode("https://g.org/")
@@ -144,13 +144,13 @@ func TestCrawlDepth3(t *testing.T) {
 
 	t.Run("without tree", func(t *testing.T) {
 		visited := make(map[string]bool)
-		crawledURLs := Crawl("https://g.org/", 3, ffetcher, nil, visited)
+		crawledURLs := crawl("https://g.org/", 3, ffetcher, nil, visited)
 		assert.Equal(t, depth3ExpectedURLs, *crawledURLs)
 	})
 	t.Run("with tree", func(t *testing.T) {
 		visited := make(map[string]bool)
 		rootNode := tree.NewNode("https://g.org/")
-		crawledURLs := Crawl("https://g.org/", 3, ffetcher, rootNode, visited)
+		crawledURLs := crawl("https://g.org/", 3, ffetcher, rootNode, visited)
 		assert.Equal(t, depth3ExpectedURLs, *crawledURLs)
 
 		expectedTree := tree.NewNode("https://g.org/")
@@ -184,14 +184,14 @@ func TestCrawlDepth3(t *testing.T) {
 		t.Run("depth 4", func(t *testing.T) {
 			visited := make(map[string]bool)
 			rootNode := tree.NewNode("https://g.org/")
-			crawledURLs := Crawl("https://g.org/", 4, ffetcher, rootNode, visited)
+			crawledURLs := crawl("https://g.org/", 4, ffetcher, rootNode, visited)
 			assert.Equal(t, depth3ExpectedURLs, *crawledURLs)
 			assert.Equal(t, expectedTree, rootNode)
 		})
 		t.Run("depth 5", func(t *testing.T) {
 			visited := make(map[string]bool)
 			rootNode := tree.NewNode("https://g.org/")
-			crawledURLs := Crawl("https://g.org/", 5, ffetcher, rootNode, visited)
+			crawledURLs := crawl("https://g.org/", 5, ffetcher, rootNode, visited)
 			assert.Equal(t, depth3ExpectedURLs, *crawledURLs)
 			assert.Equal(t, expectedTree, rootNode)
 		})
