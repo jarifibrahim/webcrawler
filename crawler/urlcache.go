@@ -47,7 +47,7 @@ func (c *URLCache) Add(url string) bool {
 	return true
 }
 
-// WriteSiteMapToFile generates sitemap from the given list of URLs
+// WriteSiteMap generates sitemap from the given list of URLs
 // The sitemap is minimal and contains only the mandatory <loc> field
 // Sample sitemap
 //
@@ -58,7 +58,7 @@ func (c *URLCache) Add(url string) bool {
 //     <loc>http://foo.com</loc>
 //   </url>
 // </urlset>
-func (c *URLCache) WriteSiteMapToFile(f io.Writer) {
+func (c *URLCache) WriteSiteMap(f io.Writer) {
 	xmlTemplate := `<?xml version="1.0" encoding="UTF-8"?>
 
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

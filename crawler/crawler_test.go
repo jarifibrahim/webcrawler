@@ -17,7 +17,7 @@ func init() {
 	logrus.SetLevel(logrus.PanicLevel)
 
 }
-func TestWriteSiteMapToFile(t *testing.T) {
+func TestWriteSiteMap(t *testing.T) {
 	var writeBuffer bytes.Buffer
 	cache := NewURLCache()
 	cache.urls = []string{"/foo", "/bar", "/helloWorld"}
@@ -37,7 +37,7 @@ func TestWriteSiteMapToFile(t *testing.T) {
 </urlset>
 `
 	// Write sitemap to writeBuffer
-	cache.WriteSiteMapToFile(&writeBuffer)
+	cache.WriteSiteMap(&writeBuffer)
 	assert.Equal(t, expectedOutput, writeBuffer.String())
 }
 

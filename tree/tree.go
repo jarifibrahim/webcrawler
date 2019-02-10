@@ -1,7 +1,7 @@
 package tree
 
 import (
-	"os"
+	"io"
 	"strings"
 	"sync"
 
@@ -36,9 +36,9 @@ func (node *URLNode) AddChild(childURL string) *URLNode {
 	return &newChild
 }
 
-// WriteTreeToFile generates the tree and writes it to the file.
-func (node *URLNode) WriteTreeToFile(file *os.File) {
-	if _, err := file.Write([]byte(node.GenerateTree())); err != nil {
+// WriteTree generates the tree and writes it to the writer.
+func (node *URLNode) WriteTree(writer io.Writer) {
+	if _, err := writer.Write([]byte(node.GenerateTree())); err != nil {
 		log.Error(err)
 	}
 }

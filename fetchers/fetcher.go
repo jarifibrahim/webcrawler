@@ -137,7 +137,7 @@ func buildURL(baseURL string, href string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// Remove all query params
+	// Remove query params, if any
 	u.RawQuery = ""
 	// Remove fragment, if any
 	u.Fragment = ""

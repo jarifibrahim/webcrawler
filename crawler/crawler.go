@@ -1,8 +1,8 @@
 package crawler
 
 import (
+	"io"
 	"net/url"
-	"os"
 	"sync"
 	"time"
 
@@ -88,7 +88,7 @@ func isPartOfDomain(baseURL, urlToCheck string) bool {
 }
 
 // StartCrawling is the main entry point for crawling.
-func StartCrawling(baseURL string, maxDepth int, showTree bool, treeFile, siteMapFile *os.File) {
+func StartCrawling(baseURL string, maxDepth int, showTree bool, treeWriter, siteMapWriter io.Writer) {
 	start := time.Now()
 	var root *tree.URLNode
 	if showTree {
@@ -102,13 +102,13 @@ func StartCrawling(baseURL string, maxDepth int, showTree bool, treeFile, siteMa
 	wg.Wait()
 
 	log.Info("Total URLs found:", urlCache.seenURLCount)
-	log.Info("Total URLs Crawled:", urlCache.crawledURLCount)
+	log.Info("Total URLs crawled:", urlCache.crawledURLCount)
 	log.Info("Total time taken:", time.Since(start))
 
-	urlCache.WriteSiteMapToFile(siteMapFile)
+	urlCache.WriteSiteMap(siteMapWriter)
 
 	if showTree {
-		root.WriteTreeToFile(treeFile)
+		root.WriteTree(treeWriter)
 	}
 
 }
