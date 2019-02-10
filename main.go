@@ -31,5 +31,5 @@ func main() {
 		}
 	}
 
-	crawler.StartCrawling(*maxDepth, *baseURL, *showTree, treeFile, siteMapFile)
+	crawler.StartCrawling(*baseURL, *maxDepth, *showTree, treeFile, siteMapFile)
 }

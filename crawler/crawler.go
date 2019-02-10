@@ -88,7 +88,7 @@ func isPartOfDomain(baseURL, urlToCheck string) bool {
 }
 
 // StartCrawling is the main entry point for crawling.
-func StartCrawling(maxDepth int, baseURL string, showTree bool, treeFile, siteMapFile *os.File) {
+func StartCrawling(baseURL string, maxDepth int, showTree bool, treeFile, siteMapFile *os.File) {
 	start := time.Now()
 	var root *tree.URLNode
 	if showTree {
