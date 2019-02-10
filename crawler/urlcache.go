@@ -8,8 +8,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// URLCache stores the global state of crawling. It is go rountine safe.
-type URLCache struct {
+// CrawlerState stores the global state of crawling. It is go rountine safe.
+type CrawlerState struct {
 	urlMap          map[string]struct{} // urlMap is used for fast lookup. It is used to ensure we don't crawl a URL twice
 	urls            []string            // urls stores the actual list of URLs seen
 	seenURLCount    int                 // seenURLCount stores the number of URLs. seenURLCount will always be less than or equal to crawledURLCoun
@@ -17,23 +17,23 @@ type URLCache struct {
 	sync.Mutex
 }
 
-// NewURLCache returns a new URLCache
-func NewURLCache() *URLCache {
-	return &URLCache{
+// NewCrawlerState returns a new CrawlerState
+func NewCrawlerState() *CrawlerState {
+	return &CrawlerState{
 		urlMap: make(map[string]struct{}),
 	}
 }
 
 // IncrementCrawledCount increases the crawled URL count by 1
-func (c *URLCache) IncrementCrawledCount() {
+func (c *CrawlerState) IncrementCrawledCount() {
 	c.Lock()
 	c.crawledURLCount++
 	c.Unlock()
 }
 
-// Add tries to insert the new url into the url cache.
+// AddURL tries to insert the new url into the global URL cache.
 // Returns false if URL was already present and true if not.
-func (c *URLCache) Add(url string) bool {
+func (c *CrawlerState) AddURL(url string) bool {
 	c.Lock()
 	if _, ok := c.urlMap[url]; ok {
 		// URL already present. Return false indicating the new url was already present
@@ -58,7 +58,7 @@ func (c *URLCache) Add(url string) bool {
 //     <loc>http://foo.com</loc>
 //   </url>
 // </urlset>
-func (c *URLCache) WriteSiteMap(f io.Writer) {
+func (c *CrawlerState) WriteSiteMap(f io.Writer) {
 	xmlTemplate := `<?xml version="1.0" encoding="UTF-8"?>
 
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

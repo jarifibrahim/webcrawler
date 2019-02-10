@@ -22,10 +22,10 @@ Params:
 	urlNode - urlNode is used to build the tree when --show-tree flag is set.
       	      urlNode stores a tree of link. Where root of the tree is the base URL and
 			  all the links reachable from root are stored at it's children
-	cache  	- Set of URLs already crawled. This ensures we do not crawl URLs which are
-			  already crawled.
+	state   - state stores the global state of crawling. It contains the set of URLs
+		      already crawled.
 */
-func crawl(baseURL string, depth int, fetcher fetchers.Fetcher, urlNode *tree.URLNode, cache *URLCache) {
+func crawl(baseURL string, depth int, fetcher fetchers.Fetcher, urlNode *tree.URLNode, state *CrawlerState) {
 	contextLogger := log.WithFields(log.Fields{
 		"base_url": baseURL,
 		"depth":    depth,
@@ -33,8 +33,8 @@ func crawl(baseURL string, depth int, fetcher fetchers.Fetcher, urlNode *tree.UR
 
 	defer wg.Done()
 
-	// cache.Add() returns false if the URL was already seen.
-	if !cache.Add(baseURL) {
+	// state.AddURL() returns false if the URL was already seen.
+	if !state.AddURL(baseURL) {
 		contextLogger.Info("URL already crawled. Skipping")
 		return
 	}
@@ -50,7 +50,7 @@ func crawl(baseURL string, depth int, fetcher fetchers.Fetcher, urlNode *tree.UR
 	// Get list of URLs on the given page
 	urlList, err := fetcher.Fetch(baseURL, fetchers.SimpleLinkExtractor)
 
-	cache.IncrementCrawledCount()
+	state.IncrementCrawledCount()
 
 	if err != nil {
 		contextLogger.Infof("failed to fetch URL")
@@ -63,15 +63,16 @@ func crawl(baseURL string, depth int, fetcher fetchers.Fetcher, urlNode *tree.UR
 
 		if !isPartOfDomain(baseURL, url) {
 			// even if we're not crawling the URL, mark it as seen
-			cache.Add(url)
+			state.AddURL(url)
 			contextLogger.WithField("child_url", url).Info("Child URL not part of the domain. Skipping.")
 			continue
 		}
 		wg.Add(1)
-		go crawl(url, depth-1, fetcher, childNode, cache)
+		go crawl(url, depth-1, fetcher, childNode, state)
 	}
 }
 
+// isPartOfDomain checks if the baseURL and urlToCheck belong to the same domain
 func isPartOfDomain(baseURL, urlToCheck string) bool {
 	base, err := url.Parse(baseURL)
 	if err != nil {
@@ -87,7 +88,15 @@ func isPartOfDomain(baseURL, urlToCheck string) bool {
 
 }
 
-// StartCrawling is the main entry point for crawling.
+// StartCrawling is the main entry point for crawling. It crawls the given URL
+// in depth first search manner.
+//
+// params:
+//	BaseURL: 		It is the starting URL for the crawler
+// 	MaxDepth: 		It determines the depth of depth-first-search
+// 	ShowTree: 		It determines if the tree should be generated for the crawled pages
+//  TreeWriter:		If showTree is true, the tree is written to treeWriter
+// 	SiteMapWriter:	The xml sitemap is written to the sitemapwriter
 func StartCrawling(baseURL string, maxDepth int, showTree bool, treeWriter, siteMapWriter io.Writer) {
 	start := time.Now()
 	var root *tree.URLNode
@@ -95,17 +104,17 @@ func StartCrawling(baseURL string, maxDepth int, showTree bool, treeWriter, site
 		root = tree.NewNode(baseURL)
 	}
 
-	urlCache := NewURLCache()
+	crawlerState := NewCrawlerState()
 
 	wg.Add(1)
-	go crawl(baseURL, maxDepth, fetchers.NewSimpleFetcher(baseURL), root, urlCache)
+	go crawl(baseURL, maxDepth, fetchers.NewSimpleFetcher(baseURL), root, crawlerState)
 	wg.Wait()
 
-	log.Info("Total URLs found:", urlCache.seenURLCount)
-	log.Info("Total URLs crawled:", urlCache.crawledURLCount)
+	log.Info("Total URLs found:", crawlerState.seenURLCount)
+	log.Info("Total URLs crawled:", crawlerState.crawledURLCount)
 	log.Info("Total time taken:", time.Since(start))
 
-	urlCache.WriteSiteMap(siteMapWriter)
+	crawlerState.WriteSiteMap(siteMapWriter)
 
 	if showTree {
 		root.WriteTree(treeWriter)
