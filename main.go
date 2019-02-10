@@ -13,7 +13,7 @@ func main() {
 		FullTimestamp: true,
 	})
 	baseURL := flag.String("baseurl", "http://jarifibrahim.github.io", "Base URL to crawl")
-	maxDepth := flag.Int("max-depth", 2, "Max Depth to crawl")
+	maxDepth := flag.Int("max-depth", 3, "Max Depth to crawl")
 	sitemapFileName := flag.String("sitemap-file-name", "sitemap.xml", "File to write sitemap")
 	showTree := flag.Bool("show-tree", true, "Show links between pages")
 	treeFileName := flag.String("tree-file-name", "url-tree.txt", "File to write the generated tree")
