@@ -52,16 +52,17 @@ func (f SimpleFetcher) Fetch(url string, le LinksExtractor) ([]string, error) {
 	}
 
 	defer resp.Body.Close()
-	return le(f.baseURL, resp.Body), nil
+	return le(f.baseURL, url, resp.Body), nil
 }
 
 // LinksExtractor extracts links from a given io.Reader
-// It allows user to customize how the links should be extracted from given page
-type LinksExtractor func(string, io.Reader) []string
+// It allows user to customize how the links should be extracted from given
+// page.
+type LinksExtractor func(baseURL string, currentURL string, response io.Reader) []string
 
 // SimpleLinkExtractor satisfies LinksExtractor.
 // It reads the body and extracts the valid links
-func SimpleLinkExtractor(baseURL string, body io.Reader) []string {
+func SimpleLinkExtractor(baseURL, currentURL string, body io.Reader) []string {
 	contextLogger := log.WithField("base_url", baseURL)
 
 	var urlList []string
@@ -83,14 +84,9 @@ func SimpleLinkExtractor(baseURL string, body io.Reader) []string {
 			if href == nil {
 				continue
 			}
-			// If we've already added this URL to urlList, don't add it again
-			if _, ok := URLset[*href]; ok {
-				continue
-			}
 
-			// add URL to URLset
-			URLset[*href] = struct{}{}
 			builtURL, err := buildURL(baseURL, *href)
+
 			if err != nil {
 				// error occurred while trying to build the URL. Log the error
 				// and continue.
@@ -98,8 +94,17 @@ func SimpleLinkExtractor(baseURL string, body io.Reader) []string {
 				continue
 			}
 
+			// If we've already added this URL to urlList, don't add it again
+			if _, ok := URLset[builtURL]; ok {
+				continue
+			}
+
+			// add URL to URLset
+			URLset[builtURL] = struct{}{}
+
 			// if the new url is equal to the baseURL don't add it
-			if builtURL == baseURL {
+			if builtURL == currentURL {
+				contextLogger.Infof("base url equals child URL %s", builtURL)
 				continue
 			}
 			urlList = append(urlList, builtURL)

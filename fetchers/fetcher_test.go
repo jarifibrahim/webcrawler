@@ -150,13 +150,16 @@ func TestSimpleLinkExtractor(t *testing.T) {
 		{"<a> tag with absolute URL", "<a href='http://foo.com'></a><a href='/bar'></a>", []string{"http://foo.com", "http://site.com/bar"}},
 		{"<a> tag with # href", "<a href='#content'></a>", nil},
 		{"duplicate <a> tags", "<a href='/foo'></a><a href='/foo'></a>", []string{"http://site.com/foo"}},
+		{"nested <a> tags", "<a href='/foo'><a href='/bar'></a></a>", []string{"http://site.com/foo", "http://site.com/bar"}},
+		{"<a> tag with baseURL", "<a href='/foo'></a><a href='http://site.com'></a>", []string{"http://site.com/foo"}},
+		{"multiple fragments", "<a href='/foo#bar'></a><a href='/foo#content'>", []string{"http://site.com/foo"}},
 	}
 
 	for _, tt := range testData {
 		tt := tt
 		t.Run(tt.testName, func(t *testing.T) {
 			body := strings.NewReader(tt.response)
-			actualURLList := SimpleLinkExtractor(baseURL, body)
+			actualURLList := SimpleLinkExtractor(baseURL, baseURL, body)
 			assert.Equal(t, tt.expectedURLList, actualURLList)
 		})
 	}
