@@ -15,7 +15,32 @@ import (
 // Disable logger. We don't want noisy logs when running tests
 func init() {
 	logrus.SetLevel(logrus.PanicLevel)
+}
 
+func TestStartCrawling(t *testing.T) {
+	baseURL := "http://jarifibrahim.github.io"
+	maxDepth := 3
+
+	t.Run("with show tree", func(t *testing.T) {
+		treeBuffer := bytes.Buffer{}
+		sitemapBuffer := bytes.Buffer{}
+		showTree := true
+		StartCrawling(baseURL, maxDepth, showTree, &treeBuffer, &sitemapBuffer)
+		// both the buffers should not be empty
+		assert.NotEqual(t, treeBuffer, bytes.Buffer{})
+		assert.NotEqual(t, sitemapBuffer, bytes.Buffer{})
+	})
+	t.Run("without show tree", func(t *testing.T) {
+		treeBuffer := bytes.Buffer{}
+		sitemapBuffer := bytes.Buffer{}
+		showTree := false
+		StartCrawling(baseURL, maxDepth, showTree, &treeBuffer, &sitemapBuffer)
+		// tree butter should be empty
+		assert.Equal(t, treeBuffer, bytes.Buffer{})
+		// sitemap buffer should not be empty
+		assert.NotEqual(t, sitemapBuffer, bytes.Buffer{})
+
+	})
 }
 func TestWriteSiteMap(t *testing.T) {
 	var writeBuffer bytes.Buffer
