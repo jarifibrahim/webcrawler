@@ -17,6 +17,11 @@ This will start the webcrawler and generate two files
    setting `-show-tree` flag to `false`).
 2. `sitemap.xml` which contains the sitemap in xml format.
 
+## How to run tests
+```go
+go test -v ./...
+```
+
 ## Things that can be improved
 1. Command line flags: The flag handling can be improved by using https://github.com/spf13/cobra
 2. Configuration: It would be nice to have some configuration management (It
